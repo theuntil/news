@@ -4,13 +4,20 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import type { AdItem } from "./types";
 
-const SUPABASE_PUBLIC_BASE =
-  "https://supabase.kuzeybatihaber.cloud";
+const SUPABASE_PUBLIC_BASE = "https://supabase.kuzeybatihaber.cloud";
+const FALLBACK_IMAGE = "/1.jpg";
 
-function buildPublicUrl(path: string) {
+/* ----------------------------------
+   SAFE URL BUILDER (ASLA PATLAMAZ)
+---------------------------------- */
+function buildPublicUrl(path?: string | null) {
+  if (!path || typeof path !== "string") return FALLBACK_IMAGE;
+
   const clean = path
     .replace(/^\/+/, "")
     .replace(/^reklamlar\//, "");
+
+  if (!clean) return FALLBACK_IMAGE;
 
   return `${SUPABASE_PUBLIC_BASE}/storage/v1/object/public/reklamlar/${clean}`;
 }
@@ -58,7 +65,7 @@ export default function AdsMarquee() {
       style={{
         position: "relative",
         width: "100%",
-        height:90,
+        height: 90,
         overflow: "hidden",
         display: "flex",
         alignItems: "center",
@@ -86,7 +93,7 @@ export default function AdsMarquee() {
         </div>
       )}
 
-      {/* ---------- ADS MARQUEE ---------- */}
+      {/* ---------- ADS ---------- */}
       {loopAds.length > 0 && (
         <div
           style={{
@@ -100,47 +107,43 @@ export default function AdsMarquee() {
             willChange: "transform",
           }}
         >
-          {loopAds.map((ad, i) => (
-            <a
-              key={`${ad.id}-${i}`}
-              href={ad.redirect_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                margin: "0 16px",
-                flexShrink: 0,
-                display: "block",
-              }}
-            >
-              <div
+          {loopAds.map((ad, i) => {
+            if (!ad?.redirect_url) return null;
+
+            return (
+              <a
+                key={`${ad.id}-${i}`}
+                href={ad.redirect_url}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
-                  position: "relative",
-                  width: 180,
-                  height: 85,
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  background: "#e5e7eb",
-                  transition: "transform .2s ease, box-shadow .2s ease",
+                  margin: "0 16px",
+                  flexShrink: 0,
+                  display: "block",
                 }}
               >
-               <Image
-  src={buildPublicUrl(ad.image_path)}
-  alt="Reklam"
-  fill
-  sizes="180px"
-  priority={i < 4}
-  onLoadingComplete={(img) => img.classList.remove("opacity-0")}
-  className="
-    object-cover
-    opacity-0
-    transition-opacity
-    duration-300
-  "
-/>
-
-              </div>
-            </a>
-          ))}
+                <div
+                  style={{
+                    position: "relative",
+                    width: 180,
+                    height: 85,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    background: "#e5e7eb",
+                  }}
+                >
+                  <Image
+                    src={buildPublicUrl(ad.image_path)}
+                    alt="Reklam"
+                    fill
+                    sizes="180px"
+                    priority={i < 4}
+                    className="object-cover"
+                  />
+                </div>
+              </a>
+            );
+          })}
         </div>
       )}
     </div>

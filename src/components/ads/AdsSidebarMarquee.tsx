@@ -8,32 +8,33 @@ import Image from "next/image";
 ---------------------------------- */
 type AdItem = {
   id: string;
-  image_path: string;
-  redirect_url: string;
+  image_path: string | null;
+  redirect_url: string | null;
 };
 
 /* ----------------------------------
-   SUPABASE PUBLIC BASE (HARDCODED)
-   ❗ Client component için zorunlu
+   CONSTANTS
 ---------------------------------- */
-const SUPABASE_PUBLIC_BASE =
-  "https://supabase.kuzeybatihaber.cloud";
+const SUPABASE_PUBLIC_BASE = "https://supabase.kuzeybatihaber.cloud";
+const FALLBACK_IMAGE = "/1.jpg";
 
 /* ----------------------------------
-   HELPERS
+   SAFE URL BUILDER
 ---------------------------------- */
-function buildPublicUrl(path: string) {
-  if (!path || path.trim() === "") return "/1.jpg";
+function buildPublicUrl(path?: string | null) {
+  if (!path || typeof path !== "string") return FALLBACK_IMAGE;
 
   const clean = path
     .replace(/^\/+/, "")
     .replace(/^reklamlar\//, "");
 
+  if (!clean) return FALLBACK_IMAGE;
+
   return `${SUPABASE_PUBLIC_BASE}/storage/v1/object/public/reklamlar/${clean}`;
 }
 
 /* ----------------------------------
-   KEYFRAMES (ONCE)
+   KEYFRAMES
 ---------------------------------- */
 function injectKeyframes() {
   if (typeof document === "undefined") return;
@@ -95,28 +96,29 @@ export default function AdsSidebarMarquee({
           willChange: "transform",
         }}
       >
-        {loopAds.map((ad, i) => (
-          <a
-            key={`${ad.id}-${i}`}
-            href={ad.redirect_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block mb-4"
-          >
-            <div className="relative w-full h-[140px] rounded-xl overflow-hidden bg-gray-200">
-              <Image
-                src={buildPublicUrl(ad.image_path)}
-                alt="Reklam"
-                fill
-                sizes="210px"
-                className="object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/1.jpg";
-                }}
-              />
-            </div>
-          </a>
-        ))}
+        {loopAds.map((ad, i) => {
+          if (!ad?.redirect_url) return null;
+
+          return (
+            <a
+              key={`${ad.id}-${i}`}
+              href={ad.redirect_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block mb-4"
+            >
+              <div className="relative w-full h-[140px] rounded-xl overflow-hidden bg-gray-200">
+                <Image
+                  src={buildPublicUrl(ad.image_path)}
+                  alt="Reklam"
+                  fill
+                  sizes="210px"
+                  className="object-cover"
+                />
+              </div>
+            </a>
+          );
+        })}
       </div>
     </div>
   );
